@@ -1,0 +1,105 @@
+# docker-compose.yml (Fixed)
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: chatbot_postgres
+    environment:
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_pass
+      POSTGRES_DB: chatbot_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chatbot_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chatbot_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot_api
+    command: python -m app.main  # Direct command - entrypoint handles waiting
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=chatbot_user
+      - POSTGRES_PASSWORD=chatbot_pass
+      - POSTGRES_DB=chatbot_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - DATA_DIR=/app/data/csvs
+    volumes:
+      - ./data:/app/data
+      - ./app:/app/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - chatbot_network
+    restart: unless-stopped
+    shm_size: '2gb'
+
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot_cli
+    command: python -m app.cli  # Direct command - entrypoint handles waiting
+    stdin_open: true
+    tty: true
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=chatbot_user
+      - POSTGRES_PASSWORD=chatbot_pass
+      - POSTGRES_DB=chatbot_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DATA_DIR=/app/data/csvs
+    volumes:
+      - ./data:/app/data
+      - ./app:/app/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - chatbot_network
+    profiles:
+      - cli
+    shm_size: '2gb'
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  chatbot_network:
+    driver: bridge

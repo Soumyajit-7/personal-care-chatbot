@@ -1,0 +1,33 @@
+# requirements.txt
+# Core Framework
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+
+# LangChain & LangGraph
+langgraph
+langchain
+langchain-groq
+langchain-community
+langchain-core
+langgraph-checkpoint-postgres  # Add this line
+psycopg[binary,pool]            # Add this line (required by postgres checkpointer)
+
+# Database
+psycopg2-binary
+sqlalchemy
+asyncpg
+
+# Redis
+redis
+
+# Data Processing
+pandas
+
+# Web Scraping
+selenium
+beautifulsoup4
+webdriver-manager
+lxml
