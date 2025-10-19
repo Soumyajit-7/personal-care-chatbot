@@ -178,8 +178,8 @@ docker-compose build
 docker-compose up -d postgres redis api
 ```
 # 5. Access
-# API: http://localhost:8000
-# Docs: http://localhost:8000/docs
+API: http://localhost:8000
+Docs: http://localhost:8000/docs
 # CLI: 
 ```
 docker-compose --profile cli run --rm cli
